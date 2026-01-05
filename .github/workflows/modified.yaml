@@ -1,0 +1,59 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Test Python Package
+
+# CINTENT >> MANUAL TRIGGER
+# on:
+#   pull_request:
+#     branches:
+#       - 'main'
+on: [repository_dispatch, workflow_dispatch]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # CINTENT >> REMOVE_MATRIX
+        # python-version: ["3.10", "3.11"]
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # CINTENT >> INSERT_CINTENT
+    - uses: JavidDitty/setup-cintent@a606c80c34ec190c6a20dea33d6d58ddb6c4e0cc
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-ml.txt ]; then pip install -r requirements-ml.txt; fi
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+        if [ -f requirements-reports.txt ]; then pip install -r requirements-reports.txt; fi
+
+    # CINTENT >> REMOVE_COMMIT
+    # - name: run pre-commit
+    #   run: |
+    #     pre-commit install
+    #     pre-commit run --all-files
+
+    - name: Test with pytest
+      run: |
+        DATAPROFILER_SEED=0 pytest --cov=dataprofiler --cov-fail-under=80
+
+    # CINTENT >> INSERT_CINTENT
+    - name: Upload CIntent Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.CINTENT_ARTIFACT_NAME }}
+        path: ${{ env.CINTENT_LOGS }}
